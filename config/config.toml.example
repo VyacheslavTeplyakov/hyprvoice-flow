@@ -1,0 +1,42 @@
+# ==============================================================================
+# hyprvoice configuration template
+# Copy to ~/.config/hyprvoice/config.toml and set your API key
+# ==============================================================================
+
+[providers.groq]
+  api_key = "YOUR_GROQ_API_KEY_HERE"
+
+[transcription]
+  provider = "groq-transcription"
+  model = "whisper-large-v3-turbo"
+  language = "ru"
+
+[llm]
+  enabled = true
+  provider = "groq"
+  model = "openai/gpt-oss-20b"
+
+[llm.post_processing]
+  remove_stutters = true
+  add_punctuation = true
+  fix_grammar = true
+  remove_filler_words = true
+
+[recording]
+  sample_rate = 16000
+  channels = 1
+  format = "s16"
+  buffer_size = 8192
+  device = ""
+  channel_buffer_size = 30
+  timeout = "15m"
+
+[injection]
+  backends = ["wtype", "clipboard"]
+  ydotool_timeout = "5s"
+  wtype_timeout = "10s"
+  clipboard_timeout = "3s"
+
+[notifications]
+  enabled = true
+  type = "desktop"

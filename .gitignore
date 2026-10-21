@@ -1,0 +1,20 @@
+# Sensitive files & secrets
+config.toml
+*.key
+*.token
+.env
+.env.*
+!*.example
+
+# Temporary and runtime files
+*.lock
+*.log
+/tmp/*
+
+# Editor & OS files
+.DS_Store
+*.swp
+*.swo
+*~
+*.bak
+*.old

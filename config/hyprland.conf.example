@@ -1,0 +1,14 @@
+# ==============================================================================
+# Hyprland Keybinding Configuration for hyprvoice-flow
+# Add these lines to ~/.config/hypr/hyprland.conf
+# ==============================================================================
+
+# Option A: Side mouse button (mouse:275) - Recommended
+# - Click: Hands-free recording mode (toggle)
+# - Hold: Classic Push-to-Talk mode
+bind  = , mouse:275, exec, ~/.config/hypr/scripts/hyprvoice_talk.sh start
+bindr = , mouse:275, exec, ~/.config/hypr/scripts/hyprvoice_talk.sh stop
+
+# Option B: Keyboard shortcut (e.g. SUPER + Space or SUPER + D)
+# bind  = SUPER, Space, exec, ~/.config/hypr/scripts/hyprvoice_talk.sh start
+# bindr = SUPER, Space, exec, ~/.config/hypr/scripts/hyprvoice_talk.sh stop

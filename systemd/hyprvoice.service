@@ -1,0 +1,17 @@
+[Unit]
+Description=Hyprvoice voice-to-text daemon
+Documentation=https://github.com/leonardotrapani/hyprvoice
+After=pipewire.service
+Wants=pipewire.service
+
+[Service]
+Type=simple
+Environment="PATH=%h/.local/bin:/usr/local/bin:/usr/bin"
+ExecStart=/usr/bin/hyprvoice serve
+ExecStartPre=/usr/bin/systemctl --user import-environment WAYLAND_DISPLAY XDG_RUNTIME_DIR
+ExecStartPre=/bin/sh -c 'until [ -n "$WAYLAND_DISPLAY" ]; do sleep 0.1; done'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

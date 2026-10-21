@@ -1,0 +1,77 @@
+#!/bin/bash
+# ==============================================================================
+# Universal wtype wrapper for Hyprland
+#
+# Intended to be placed in ~/.local/bin/wtype ahead of /usr/bin/wtype in $PATH.
+#
+# Solves common Linux/Wayland typing issues:
+# 1. Native Wayland apps: Uses clipboard copy + paste simulation for speed and
+#    full Unicode support (never mangles spaces or layouts).
+# 2. XWayland apps (Electron, OpenAI Codex, JetBrains, Steam, etc.):
+#    Bypasses broken virtual-keyboard routing via Hyprland 0.56+ Lua dispatch:
+#    `hl.dsp.send_shortcut({ mods = 'CTRL', key = 'code:47' })` and `Shift+Insert`
+#    (guaranteeing paste works even if Russian/Cyrillic keyboard layout is active).
+# 3. Terminal emulators (kitty, foot, alacritty, etc.):
+#    Preserves standard keyboard simulation via /usr/bin/wtype -- "$text".
+# 4. Safe clipboard handling:
+#    Restores previous clipboard in the background after 2.0s only if unchanged.
+#    Never destroys clipboard with `wl-copy -c`.
+# ==============================================================================
+
+# If arguments are not a simple typing command (e.g. they don't start with "--"),
+# pass them directly to the real system wtype.
+if [[ "$1" != "--" || $# -ne 2 ]]; then
+    exec /usr/bin/wtype "$@"
+fi
+
+text="$2"
+
+# Inspect the active window in Hyprland
+win_info=$(hyprctl activewindow -j 2>/dev/null)
+active_class=$(echo "$win_info" | jq -r '.class // empty' 2>/dev/null)
+active_class_lower=$(echo "$active_class" | tr '[:upper:]' '[:lower:]')
+is_xwayland=$(echo "$win_info" | jq -r '.xwayland // false' 2>/dev/null)
+
+# Terminal emulators: direct keyboard simulation works best
+if [[ "$active_class_lower" =~ ^(kitty|foot|alacritty|konsole|wezterm)$ ]]; then
+    exec /usr/bin/wtype -- "$text"
+fi
+
+# GUI Applications: Use clipboard copy + paste simulation
+
+# 1. Save current clipboard contents
+old_clip=$(wl-paste -n 2>/dev/null)
+
+# 2. Copy the transcribed text to clipboard
+echo -n "$text" | wl-copy
+# Give clipboard bridge a tiny moment to register the offer
+sleep 0.05
+
+# 3. Simulate Paste
+if [[ "$is_xwayland" == "true" ]]; then
+    # XWayland window (e.g. Electron apps running via X11):
+    # Use Hyprland 0.56+ Lua dispatcher to send key events directly to XWayland
+    hyprctl dispatch "hl.dsp.send_shortcut({ mods = 'CTRL', key = 'code:47' })" >/dev/null 2>&1
+    # Also send Shift+Insert (universal paste in X11 regardless of keyboard layout)
+    hyprctl dispatch "hl.dsp.send_shortcut({ mods = 'SHIFT', key = 'Insert' })" >/dev/null 2>&1
+    # Fallback to wtype as well
+    /usr/bin/wtype -M ctrl -k v -m ctrl >/dev/null 2>&1
+else
+    # Native Wayland window:
+    /usr/bin/wtype -M ctrl -k v -m ctrl >/dev/null 2>&1
+    hyprctl dispatch "hl.dsp.send_shortcut({ mods = 'CTRL', key = 'code:47' })" >/dev/null 2>&1
+fi
+
+# 4. Asynchronous clipboard restoration:
+# Give the application 2.0s in background so slow Electron/XWayland apps finish reading it.
+# Only restore if clipboard still contains our transcribed text (user hasn't copied anything else).
+if [ -n "$old_clip" ]; then
+    (
+        sleep 2.0
+        current_clip=$(wl-paste -n 2>/dev/null)
+        if [ "$current_clip" = "$text" ]; then
+            echo -n "$old_clip" | wl-copy
+        fi
+    ) &>/dev/null &
+    disown
+fi
