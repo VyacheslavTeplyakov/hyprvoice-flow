@@ -11,16 +11,19 @@
   model = "whisper-large-v3-turbo"
   language = "ru"
 
+# LLM Post-Processing (optional)
+# Disabled by default so Whisper transcribes your exact words without rewriting,
+# rearranging, or removing intentional duplicate words.
 [llm]
-  enabled = true
+  enabled = false
   provider = "groq"
   model = "openai/gpt-oss-20b"
 
 [llm.post_processing]
-  remove_stutters = true
+  remove_stutters = false
   add_punctuation = true
-  fix_grammar = true
-  remove_filler_words = true
+  fix_grammar = false
+  remove_filler_words = false
 
 [recording]
   sample_rate = 16000
