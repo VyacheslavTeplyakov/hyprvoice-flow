@@ -14,6 +14,13 @@ if command -v perl >/dev/null 2>&1; then
     text=$(echo "$text" | perl -CS -0777 -pe 's/^\s+//; s/\s+$//; s/^(.)/\U$1/')
 fi
 
+# Filter out common Whisper silence hallucinations
+clean_lower=$(echo "$text" | tr '[:upper:]' '[:lower:]' | sed -e 's/[[:punct:]]//g' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+if [[ "$clean_lower" =~ ^(продолжение следует|спасибо за просмотр|спасибо за внимание|субтитры|редактор субтитров)$ ]] || [ -z "$clean_lower" ]; then
+    notify-send -t 2500 -u low -a "Hyprvoice" "Голос не обнаружен" "Микрофон записал тишину. Повторите фразу." 2>/dev/null
+    exit 0
+fi
+
 # Get info about the currently active window in Hyprland
 win_info=$(hyprctl activewindow -j 2>/dev/null)
 active_class=$(echo "$win_info" | jq -r '.class // empty' 2>/dev/null)

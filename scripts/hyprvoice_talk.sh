@@ -58,8 +58,9 @@ if [ "$action" = "start" ]; then
             rm -f "$STATE_FILE"
         fi
         
-        # 2. Mute speakers to prevent mic pollution
+        # 2. Mute speakers to prevent mic pollution & ensure mic is unmuted
         wpctl set-mute @DEFAULT_AUDIO_SINK@ 1
+        wpctl set-mute @DEFAULT_AUDIO_SOURCE@ 0 2>/dev/null
         
         # 3. Start recording
         hyprvoice toggle
